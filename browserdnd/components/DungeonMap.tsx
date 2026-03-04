@@ -1,40 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
-import { dungeonGrid, TileType } from "./data/mockData";
-
-const tileColors: Record<TileType, string> = {
-  player: "bg-[#7c3aed]",
-  enemy: "bg-red-700",
-  treasure: "bg-yellow-500",
-  wall: "bg-zinc-700",
-  empty: "bg-zinc-900",
-  unexplored: "bg-zinc-950",
+const tileStyles: Record<string, string> = {
+  "?": "bg-zinc-950",
+  "#": "bg-zinc-700",
+  ".": "bg-zinc-900",
+  P: "bg-[#7c3aed]",
+  E: "bg-red-700",
+  T: "bg-yellow-500",
+  W: "bg-blue-500",
+  N: "bg-orange-500",
+  B: "bg-red-900",
+  A: "bg-green-600",
+  K: "bg-amber-400",
+  D: "bg-amber-800",
+  S: "bg-stone-500",
 };
 
-export default function DungeonMap() {
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      const key = e.key.toLowerCase();
-      const dirMap: Record<string, string> = {
-        w: "up",
-        a: "left",
-        s: "down",
-        d: "right",
-        arrowup: "up",
-        arrowleft: "left",
-        arrowdown: "down",
-        arrowright: "right",
-      };
-      const direction = dirMap[key];
-      if (direction) {
-        console.log(`Move: ${direction}`);
-      }
-    }
+interface DungeonMapProps {
+  grid: string[][];
+}
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+export default function DungeonMap({ grid }: DungeonMapProps) {
+  const width = grid[0]?.length ?? 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg">
@@ -45,13 +32,16 @@ export default function DungeonMap() {
       </div>
 
       <div className="flex flex-1 items-center justify-center p-4">
-        <div className="grid grid-cols-10 gap-[2px]">
-          {dungeonGrid.map((row, y) =>
+        <div
+          className="grid gap-[2px]"
+          style={{ gridTemplateColumns: `repeat(${width}, 1.5rem)` }}
+        >
+          {grid.map((row, y) =>
             row.map((tile, x) => (
               <div
                 key={`${x}-${y}`}
-                className={`h-6 w-6 rounded-sm ${tileColors[tile]} ${
-                  tile === "player"
+                className={`h-6 w-6 rounded-sm ${tileStyles[tile] ?? "bg-zinc-950"} ${
+                  tile === "P"
                     ? "ring-2 ring-[#7c3aed] ring-offset-1 ring-offset-[#0f0f0f]"
                     : ""
                 }`}
