@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import CharacterPanel from "./CharacterPanel";
 import EventLog from "./EventLog";
 import DungeonMap from "./DungeonMap";
@@ -13,6 +13,7 @@ export default function GameLayout() {
   const [messages, setMessages] = useState<{ id: number; text: string }[]>([
     { id: 0, text: "You enter the dungeon. Use WASD or arrow keys to move." },
   ]);
+  const msgIdRef = useRef(1);
 
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
@@ -22,15 +23,11 @@ export default function GameLayout() {
       setDungeon(result.dungeon);
 
       if (result.event === "enemyEncounter") {
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now(), text: "An enemy appears!" },
-        ]);
+        const id = msgIdRef.current++;
+        setMessages((prev) => [...prev, { id, text: "An enemy appears!" }]);
       } else if (result.event === "itemPickup") {
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now(), text: "You found an item!" },
-        ]);
+        const id = msgIdRef.current++;
+        setMessages((prev) => [...prev, { id, text: "You found an item!" }]);
       }
     },
     [dungeon]

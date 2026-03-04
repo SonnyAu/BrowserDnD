@@ -21,7 +21,7 @@ interface DungeonMapProps {
 }
 
 export default function DungeonMap({ grid }: DungeonMapProps) {
-  const width = grid.length > 0 ? grid[0].length : 0;
+  const width = grid[0]?.length ?? 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg">
