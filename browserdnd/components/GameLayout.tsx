@@ -7,12 +7,33 @@ import DungeonMap from "./DungeonMap";
 import ActionMenu from "./ActionMenu";
 import FuturePanel from "./FuturePanel";
 import { createDungeon, getVisibleMap, handleMovementInput } from "@/engine/dungeonEngine";
+import { ActionMode } from "./data/mockData";
+
+function deriveActionMode(message: string): ActionMode {
+  const lowered = message.toLowerCase();
+
+  if (lowered.includes("foe") || lowered.includes("enemy") || lowered.includes("steel")) {
+    return "combat";
+  }
+
+  if (
+    lowered.includes("says") ||
+    lowered.includes("asks") ||
+    lowered.includes("speaks") ||
+    lowered.includes('"')
+  ) {
+    return "dialogue";
+  }
+
+  return "default";
+}
 
 export default function GameLayout() {
   const [dungeon, setDungeon] = useState(() => createDungeon());
   const [messages, setMessages] = useState<{ id: number; text: string }[]>([
-    { id: 0, text: "You enter the dungeon. Use WASD or arrow keys to move." },
+    { id: 0, text: "You cross the Narrow Sea. Use WASD or arrow keys to march." },
   ]);
+  const [actionMode, setActionMode] = useState<ActionMode>("default");
   const msgIdRef = useRef(1);
 
   const handleKey = useCallback(
@@ -24,10 +45,16 @@ export default function GameLayout() {
 
       if (result.event === "enemyEncounter") {
         const id = msgIdRef.current++;
-        setMessages((prev) => [...prev, { id, text: "An enemy appears!" }]);
+        const text = "Steel is drawn — a foe approaches.";
+        setMessages((prev) => [...prev, { id, text }]);
+        setActionMode(deriveActionMode(text));
       } else if (result.event === "itemPickup") {
         const id = msgIdRef.current++;
-        setMessages((prev) => [...prev, { id, text: "You found an item!" }]);
+        const text = "A relic of the old kingdoms is claimed.";
+        setMessages((prev) => [...prev, { id, text }]);
+        setActionMode(deriveActionMode(text));
+      } else {
+        setActionMode("default");
       }
     },
     [dungeon]
@@ -41,23 +68,28 @@ export default function GameLayout() {
   const visibleMap = getVisibleMap(dungeon);
 
   return (
-    <div className="grid h-screen w-screen grid-cols-[300px_1fr_350px] grid-rows-[2fr_1fr] bg-[#0f0f0f] text-[#e5e5e5] gap-2 p-2 overflow-hidden">
-      {/* Left column — spans both rows */}
-      <div className="row-span-2">
+    <div className="grid h-screen w-screen grid-cols-[300px_1fr_350px] grid-rows-[2fr_1fr] gap-2 overflow-hidden bg-[#090909] p-2 text-[#e8d9b5]">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(127,29,29,0.2),transparent_35%),radial-gradient(circle_at_90%_5%,rgba(146,120,62,0.12),transparent_30%)]" />
+
+      <div className="relative row-span-2">
         <CharacterPanel />
       </div>
 
-      {/* Top middle */}
-      <EventLog messages={messages} />
+      <div className="relative">
+        <EventLog messages={messages} />
+      </div>
 
-      {/* Top right */}
-      <DungeonMap grid={visibleMap} />
+      <div className="relative">
+        <DungeonMap grid={visibleMap} />
+      </div>
 
-      {/* Bottom middle */}
-      <ActionMenu />
+      <div className="relative">
+        <ActionMenu mode={actionMode} />
+      </div>
 
-      {/* Bottom right */}
-      <FuturePanel />
+      <div className="relative">
+        <FuturePanel />
+      </div>
     </div>
   );
 }
