@@ -4,19 +4,22 @@ import { actionButtons, ActionMode } from "./data/mockData";
 
 interface ActionMenuProps {
   mode: ActionMode;
+  onAction: (action: string) => void;
 }
 
-export default function ActionMenu({ mode }: ActionMenuProps) {
+export default function ActionMenu({ mode, onAction }: ActionMenuProps) {
   const modeLabels: Record<ActionMode, string> = {
     default: "Council Commands",
     dialogue: "Court Audience",
     combat: "Battle Orders",
+    loot: "Spoils of War",
   };
 
   const modeHints: Record<ActionMode, string> = {
     default: "Available while traversing and scouting.",
     dialogue: "Your responses change with who you address.",
     combat: "Orders shift as steel is drawn.",
+    loot: "A relic lies before you.",
   };
 
   return (
@@ -32,7 +35,7 @@ export default function ActionMenu({ mode }: ActionMenuProps) {
         {actionButtons[mode].map((action) => (
           <button
             key={action}
-            onClick={() => console.log(`Action: ${action}`)}
+            onClick={() => onAction(action)}
             className="rounded-lg border border-[#3d2f23] bg-[#140f0d] px-6 py-3 text-sm font-medium uppercase tracking-wide text-[#e8d9b5] transition-all hover:border-[#a37f42] hover:bg-[#241913] hover:shadow-[0_0_10px_rgba(163,127,66,0.35)]"
           >
             {action}

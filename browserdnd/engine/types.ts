@@ -4,7 +4,7 @@ export type ItemTile = "T" | "W" | "A" | "K" | " ";
 
 export type Direction = "up" | "down" | "left" | "right";
 
-export type EventType = "enemyEncounter" | "itemPickup" | "none";
+export type EventType = "enemyEncounter" | "itemPickup" | "npcInteract" | "none";
 
 export interface Dungeon {
   width: number;
@@ -24,9 +24,34 @@ export interface MoveResult {
 }
 
 export interface ItemData {
+  id: string;
   name: string;
-  type: string;
+  type: "weapon" | "armor" | "consumable" | "treasure" | "key";
   value?: number;
   attack?: number;
   defense?: number;
+}
+
+export interface Equipment {
+  helmet: ItemData | null;
+  chest: ItemData | null;
+  mainWeapon: ItemData | null;
+  sideWeapon: ItemData | null;
+  pants: ItemData | null;
+}
+
+export interface PlayerState {
+  name: string;
+  level: number;
+  hp: number;
+  maxHp: number;
+  mp: number;
+  maxMp: number;
+  xp: number;
+  maxXp: number;
+  gold: number;
+  attack: number;
+  defense: number;
+  inventory: ItemData[];
+  equipment: Equipment;
 }

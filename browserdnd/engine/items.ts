@@ -1,6 +1,6 @@
 import { ItemData } from "./types";
 
-export const items: Record<string, ItemData> = {
+export const items: Record<string, Omit<ItemData, "id">> = {
   T: {
     name: "Gold Pouch",
     type: "treasure",
@@ -22,6 +22,6 @@ export const items: Record<string, ItemData> = {
   },
 };
 
-export function getItemData(tile: string): ItemData | null {
+export function getItemData(tile: string): Omit<ItemData, "id"> | null {
   return items[tile] ?? null;
 }
