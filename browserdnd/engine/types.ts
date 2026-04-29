@@ -1,6 +1,6 @@
 export type TerrainTile = "#" | "." | "D" | "S";
 export type EntityTile = "P" | "E" | "N" | "B" | " ";
-export type ItemTile = "T" | "W" | "A" | "K" | " ";
+export type ItemTile = "T" | "W" | "A" | "K" | "H" | " ";
 
 export type Direction = "up" | "down" | "left" | "right";
 

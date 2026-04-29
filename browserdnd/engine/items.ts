@@ -20,6 +20,11 @@ export const items: Record<string, Omit<ItemData, "id">> = {
     name: "Dungeon Key",
     type: "key",
   },
+  H: {
+    name: "Healing Draught",
+    type: "consumable",
+    value: 25,
+  },
 };
 
 export function getItemData(tile: string): Omit<ItemData, "id"> | null {
