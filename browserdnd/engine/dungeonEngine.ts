@@ -19,18 +19,18 @@ const sampleTerrain =
 
 const sampleEntities =
   "          " +
-  "    E     " +
-  "          " +
-  "          " +
+  " E  E     " +
+  "   N   E  " +
+  "      E   " +
   "    P     " +
-  "          ";
+  "  E       ";
 
 const sampleItems =
   "          " +
-  "      T   " +
-  "          " +
-  "   W      " +
-  "          " +
+  "   H  T   " +
+  "    A     " +
+  "   W   K  " +
+  "     H    " +
   "          ";
 
 const SAMPLE_WIDTH = 10;

@@ -57,6 +57,8 @@ export function movePlayer(dungeon: Dungeon, direction: Direction): MoveResult {
 
   if (entityTile === "E") {
     event = "enemyEncounter";
+  } else if (entityTile === "N") {
+    event = "npcInteract";
   } else if (itemTile !== " ") {
     event = "itemPickup";
   }
