@@ -14,7 +14,7 @@ export default function EventLog({ messages }: EventLogProps) {
   }, [messages]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-[#3d2f23] bg-[linear-gradient(165deg,#17120f,#120e0c)] shadow-[0_0_20px_rgba(0,0,0,0.45)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-[#3d2f23] bg-[linear-gradient(165deg,#17120f,#120e0c)] shadow-[0_0_20px_rgba(0,0,0,0.45)]">
       <div className="border-b border-[#3d2f23] px-4 py-2">
         <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#d9b66f]">
           Raven Dispatches

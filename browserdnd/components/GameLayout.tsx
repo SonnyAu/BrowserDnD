@@ -215,11 +215,26 @@ export default function GameLayout() {
   return (
     <div className="grid h-screen w-screen grid-cols-[300px_1fr_350px] grid-rows-[2fr_1fr] gap-2 overflow-hidden bg-[#090909] p-2 text-[#e8d9b5]">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(127,29,29,0.2),transparent_35%),radial-gradient(circle_at_90%_5%,rgba(146,120,62,0.12),transparent_30%)]" />
-      <div className="relative row-span-2"><CharacterPanel player={player} onEquipmentSlotClick={handleEquipmentSlotClick} /></div>
-      <div className="relative"><EventLog messages={messages} /></div>
-      <div className="relative"><DungeonMap grid={getVisibleMap(dungeon)} /></div>
-      <div className="relative"><ActionMenu mode={actionMode} onAction={handleAction} /></div>
-      <div className="relative"><FuturePanel inventory={player.inventory} showInventory={showInventory} selectedInventoryId={selectedInventoryId} onSelectItem={setSelectedInventoryId} /></div>
+      <div className="relative row-span-2 min-h-0 overflow-hidden">
+        <CharacterPanel player={player} onEquipmentSlotClick={handleEquipmentSlotClick} />
+      </div>
+      <div className="relative min-h-0 min-w-0 overflow-hidden">
+        <EventLog messages={messages} />
+      </div>
+      <div className="relative min-h-0 min-w-0 overflow-hidden">
+        <DungeonMap grid={getVisibleMap(dungeon)} />
+      </div>
+      <div className="relative min-h-0 min-w-0 overflow-hidden">
+        <ActionMenu mode={actionMode} onAction={handleAction} />
+      </div>
+      <div className="relative min-h-0 min-w-0 overflow-hidden">
+        <FuturePanel
+          inventory={player.inventory}
+          showInventory={showInventory}
+          selectedInventoryId={selectedInventoryId}
+          onSelectItem={setSelectedInventoryId}
+        />
+      </div>
     </div>
   );
 }
