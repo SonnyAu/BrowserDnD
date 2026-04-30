@@ -14,6 +14,7 @@ const tileStyles: Record<string, string> = {
   K: "bg-[#9d7a35]",
   D: "bg-[#6a5534]",
   S: "bg-[#6a635b]",
+  F: "bg-[#4b3a27]",
 };
 
 interface DungeonMapProps {
@@ -45,8 +46,10 @@ export default function DungeonMap({ grid }: DungeonMapProps) {
                     ? "ring-2 ring-[#d9b66f] ring-offset-1 ring-offset-[#0f0c0a]"
                     : ""
                 }`}
-                title={tile}
-              />
+                title={tile === "F" ? "Found NPC" : tile}
+              >
+                {tile === "F" ? <span className="text-[10px] text-[#f2d58b]">👤</span> : null}
+              </div>
             ))
           )}
         </div>

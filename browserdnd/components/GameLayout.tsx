@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import CharacterPanel from "./CharacterPanel";
 import EventLog from "./EventLog";
 import DungeonMap from "./DungeonMap";
@@ -44,9 +44,31 @@ export default function GameLayout() {
   const [dialogueState, setDialogueState] = useState<DialogueState>(null);
   const [exploredTiles, setExploredTiles] = useState<Set<number>>(() => new Set());
   const [canInteract, setCanInteract] = useState(false);
+  const [activeNpcTile, setActiveNpcTile] = useState<number | null>(null);
+  const [foundNpcTiles, setFoundNpcTiles] = useState<Set<number>>(() => new Set());
   const msgIdRef = useRef(1);
 
   const addMessage = (text: string) => setMessages((prev) => [...prev, { id: msgIdRef.current++, text }]);
+
+  const markNpcAsFound = useCallback(() => {
+    if (activeNpcTile === null) return;
+    setFoundNpcTiles((prev) => new Set(prev).add(activeNpcTile));
+    setActiveNpcTile(null);
+    setCanInteract(false);
+  }, [activeNpcTile]);
+
+  const mapGrid = useMemo(() => {
+    const baseGrid = getVisibleMap(dungeon);
+    foundNpcTiles.forEach((index) => {
+      if (!dungeon.visited.has(index)) return;
+      const x = index % dungeon.width;
+      const y = Math.floor(index / dungeon.width);
+      if (baseGrid[y]?.[x] && baseGrid[y][x] !== "P") {
+        baseGrid[y][x] = "F";
+      }
+    });
+    return baseGrid;
+  }, [dungeon, foundNpcTiles]);
 
   const recalcCombatStats = (next: PlayerState): PlayerState => {
     const baseAtk = 12;
@@ -106,6 +128,7 @@ export default function GameLayout() {
       case "Leave":
         if (actionMode === "dialogue") {
           setDialogueState(null);
+          markNpcAsFound();
           addMessage("You end the conversation.");
         } else if (actionMode === "loot") {
           setPendingItem(null);
@@ -176,6 +199,7 @@ export default function GameLayout() {
           setPlayer((p) => ({ ...p, inventory: [...p.inventory, rewardItem], gold: p.gold + 30 }));
           addMessage("Envoy: 'Wise answer.' You gain 30 gold and a Counselor's Sigil Blade.");
           setDialogueState(null);
+          markNpcAsFound();
           setActionMode("default");
         }
         return;
@@ -183,6 +207,7 @@ export default function GameLayout() {
         if (dialogueState?.stage === "intro") {
           addMessage("Envoy: 'Then draw steel.' The envoy attacks!");
           setDialogueState(null);
+          markNpcAsFound();
           setCombatState({ enemy: createEnemy(), active: true, playerTurn: true, defending: false });
           setActionMode("combat");
         }
@@ -190,7 +215,7 @@ export default function GameLayout() {
       default:
         addMessage(`[${action}] — not yet implemented.`);
     }
-  }, [pendingItem, combatState, player, gameOver, showInventory, actionMode, dialogueState, exploredTiles, canInteract, dungeon.entities]);
+  }, [pendingItem, combatState, player, gameOver, showInventory, actionMode, dialogueState, exploredTiles, canInteract, dungeon.entities, markNpcAsFound]);
 
   const handleEquipmentSlotClick = (slotName: string) => {
     if (!showInventory || !selectedInventoryId) return;
@@ -246,6 +271,15 @@ export default function GameLayout() {
     if (!result) return;
     setDungeon(result.dungeon);
     setCanInteract(result.entityTile === "N");
+    if (result.event === "npcInteract") {
+      const playerIndex = result.dungeon.entities.indexOf("P");
+      setActiveNpcTile(playerIndex);
+      addMessage("You encounter a Council Envoy.");
+      addMessage("Council Envoy: 'One answer decides your fate. Loyalty or greed?' (Talk=Loyalty, Trade=Greed)");
+      setDialogueState({ stage: "intro", npcName: "Council Envoy" });
+      setActionMode("dialogue");
+      return;
+    }
     if (result.event === "enemyEncounter") {
       addMessage("Steel is drawn — a foe approaches.");
       setCombatState({ enemy: createEnemy(), active: true, playerTurn: true, defending: false });
@@ -275,7 +309,7 @@ export default function GameLayout() {
         <EventLog messages={messages} />
       </div>
       <div className="relative min-h-0 min-w-0 overflow-hidden">
-        <DungeonMap grid={getVisibleMap(dungeon)} />
+        <DungeonMap grid={mapGrid} />
       </div>
       <div className="relative min-h-0 min-w-0 overflow-hidden">
         <ActionMenu mode={actionMode} onAction={handleAction} canInteract={canInteract} />
