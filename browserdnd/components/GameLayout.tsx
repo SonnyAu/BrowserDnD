@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import CharacterPanel from "./CharacterPanel";
 import EventLog from "./EventLog";
 import DungeonMap from "./DungeonMap";
@@ -19,7 +19,7 @@ const TILE_ITEMS: Record<string, Omit<ItemData, "id">> = {
   H: { name: "Healing Draught", type: "consumable", value: 25 },
 };
 
-type DialogueState = { stage: "intro" | "oath"; resolved: boolean } | null;
+type DialogueState = { stage: "intro" | "question"; npcName: string } | null;
 
 const EQUIP_SLOT_MAP: Record<string, keyof Equipment> = {
   Helmet: "helmet",
@@ -28,6 +28,8 @@ const EQUIP_SLOT_MAP: Record<string, keyof Equipment> = {
   "Main Weapon": "mainWeapon",
   Pants: "pants",
 };
+
+const COUNSELOR_GIFT: Omit<ItemData, "id"> = { name: "Counselor's Sigil Blade", type: "weapon", attack: 14 };
 
 export default function GameLayout() {
   const [dungeon, setDungeon] = useState(() => createDungeon());
@@ -40,9 +42,33 @@ export default function GameLayout() {
   const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [dialogueState, setDialogueState] = useState<DialogueState>(null);
+  const [exploredTiles, setExploredTiles] = useState<Set<number>>(() => new Set());
+  const [canInteract, setCanInteract] = useState(false);
+  const [activeNpcTile, setActiveNpcTile] = useState<number | null>(null);
+  const [foundNpcTiles, setFoundNpcTiles] = useState<Set<number>>(() => new Set());
   const msgIdRef = useRef(1);
 
   const addMessage = (text: string) => setMessages((prev) => [...prev, { id: msgIdRef.current++, text }]);
+
+  const markNpcAsFound = useCallback(() => {
+    if (activeNpcTile === null) return;
+    setFoundNpcTiles((prev) => new Set(prev).add(activeNpcTile));
+    setActiveNpcTile(null);
+    setCanInteract(false);
+  }, [activeNpcTile]);
+
+  const mapGrid = useMemo(() => {
+    const baseGrid = getVisibleMap(dungeon);
+    foundNpcTiles.forEach((index) => {
+      if (!dungeon.visited.has(index)) return;
+      const x = index % dungeon.width;
+      const y = Math.floor(index / dungeon.width);
+      if (baseGrid[y]?.[x] && baseGrid[y][x] !== "P") {
+        baseGrid[y][x] = "F";
+      }
+    });
+    return baseGrid;
+  }, [dungeon, foundNpcTiles]);
 
   const recalcCombatStats = (next: PlayerState): PlayerState => {
     const baseAtk = 12;
@@ -54,11 +80,42 @@ export default function GameLayout() {
     };
   };
 
+
   const handleAction = useCallback((action: string) => {
     switch (action) {
       case "Inventory":
         setShowInventory((v) => !v);
         addMessage(showInventory ? "You close your satchel." : "You open your satchel.");
+        return;
+      case "Explore": {
+        const playerIndex = dungeon.entities.indexOf("P");
+        if (exploredTiles.has(playerIndex)) {
+          addMessage("You've already explored this tile.");
+          return;
+        }
+        setExploredTiles((prev) => new Set(prev).add(playerIndex));
+        const roll = Math.random();
+        if (roll < 0.35) {
+          const foundItem: ItemData = { ...TILE_ITEMS.H, id: `explore-${msgIdRef.current}` };
+          setPlayer((p) => ({ ...p, inventory: [...p.inventory, foundItem] }));
+          addMessage(`Exploration reward: ${foundItem.name} added to your inventory.`);
+        } else if (roll < 0.7) {
+          addMessage("You search the area but find nothing useful.");
+        } else {
+          addMessage("Your exploration attracts an ambush!");
+          setCombatState({ enemy: createEnemy(), active: true, playerTurn: true, defending: false });
+          setActionMode("combat");
+        }
+        return;
+      }
+      case "Interact":
+        if (!canInteract) {
+          addMessage("No one here to interact with.");
+          return;
+        }
+        addMessage("Council Envoy: 'One answer decides your fate. Loyalty or greed?' (Talk=Loyalty, Trade=Greed)");
+        setDialogueState({ stage: "intro", npcName: "Council Envoy" });
+        setActionMode("dialogue");
         return;
       case "Pick Up":
         if (pendingItem) {
@@ -71,6 +128,7 @@ export default function GameLayout() {
       case "Leave":
         if (actionMode === "dialogue") {
           setDialogueState(null);
+          markNpcAsFound();
           addMessage("You end the conversation.");
         } else if (actionMode === "loot") {
           setPendingItem(null);
@@ -137,30 +195,27 @@ export default function GameLayout() {
         return;
       case "Talk":
         if (dialogueState?.stage === "intro") {
-          addMessage("Envoy: 'Will you uphold your oath and guard the roads?' (Talk=Yes, Trade=No)");
-          setDialogueState({ stage: "oath", resolved: false });
-        } else if (dialogueState?.stage === "oath") {
-          setPlayer((p) => ({ ...p, gold: p.gold + 40 }));
-          addMessage("Envoy: 'Honor rewarded.' You gain 40 gold.");
-          setDialogueState({ stage: "oath", resolved: true });
+          const rewardItem: ItemData = { ...COUNSELOR_GIFT, id: `npc-${msgIdRef.current}` };
+          setPlayer((p) => ({ ...p, inventory: [...p.inventory, rewardItem], gold: p.gold + 30 }));
+          addMessage("Envoy: 'Wise answer.' You gain 30 gold and a Counselor's Sigil Blade.");
+          setDialogueState(null);
+          markNpcAsFound();
           setActionMode("default");
         }
         return;
       case "Trade":
         if (dialogueState?.stage === "intro") {
-          addMessage("Envoy: 'Coin first, favors later.' (Talk=Accept, Trade=Refuse)");
-          setDialogueState({ stage: "oath", resolved: false });
-        } else if (dialogueState?.stage === "oath") {
-          setPlayer((p) => ({ ...p, hp: Math.max(1, p.hp - 12) }));
-          addMessage("The envoy's guards rough you up. You lose 12 HP.");
-          setDialogueState({ stage: "oath", resolved: true });
-          setActionMode("default");
+          addMessage("Envoy: 'Then draw steel.' The envoy attacks!");
+          setDialogueState(null);
+          markNpcAsFound();
+          setCombatState({ enemy: createEnemy(), active: true, playerTurn: true, defending: false });
+          setActionMode("combat");
         }
         return;
       default:
         addMessage(`[${action}] — not yet implemented.`);
     }
-  }, [pendingItem, combatState, player, gameOver, showInventory, actionMode, dialogueState]);
+  }, [pendingItem, combatState, player, gameOver, showInventory, actionMode, dialogueState, exploredTiles, canInteract, dungeon.entities, markNpcAsFound]);
 
   const handleEquipmentSlotClick = (slotName: string) => {
     if (!showInventory || !selectedInventoryId) return;
@@ -184,11 +239,47 @@ export default function GameLayout() {
     setSelectedInventoryId(null);
   };
 
+  const handleInventoryUse = (itemId: string) => {
+    setPlayer((prev) => {
+      const selected = prev.inventory.find((item) => item.id === itemId);
+      if (!selected) return prev;
+
+      if (selected.type === "consumable") {
+        const used = consumeConsumable(prev, selected);
+        addMessage(used.message);
+        return used.player;
+      }
+
+      if (selected.type === "weapon" || selected.type === "armor") {
+        const slotKey: keyof Equipment = selected.type === "weapon" ? "mainWeapon" : "chest";
+        const outgoing = prev.equipment[slotKey];
+        const equipment = { ...prev.equipment, [slotKey]: selected };
+        const inventory = prev.inventory.filter((i) => i.id !== selected.id);
+        if (outgoing) inventory.push(outgoing);
+        addMessage(`Equipped ${selected.name}.`);
+        return recalcCombatStats({ ...prev, equipment, inventory });
+      }
+
+      addMessage(`${selected.name} cannot be used right now.`);
+      return prev;
+    });
+  };
+
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (actionMode !== "default" || gameOver) return;
     const result = handleMovementInput(e.key, dungeon);
     if (!result) return;
     setDungeon(result.dungeon);
+    setCanInteract(result.entityTile === "N");
+    if (result.event === "npcInteract") {
+      const playerIndex = result.dungeon.entities.indexOf("P");
+      setActiveNpcTile(playerIndex);
+      addMessage("You encounter a Council Envoy.");
+      addMessage("Council Envoy: 'One answer decides your fate. Loyalty or greed?' (Talk=Loyalty, Trade=Greed)");
+      setDialogueState({ stage: "intro", npcName: "Council Envoy" });
+      setActionMode("dialogue");
+      return;
+    }
     if (result.event === "enemyEncounter") {
       addMessage("Steel is drawn — a foe approaches.");
       setCombatState({ enemy: createEnemy(), active: true, playerTurn: true, defending: false });
@@ -200,10 +291,6 @@ export default function GameLayout() {
       setPendingItem(item);
       addMessage(`You find a ${item.name}.`);
       setActionMode("loot");
-    } else if (result.event === "npcInteract") {
-      addMessage("Envoy: 'State your business, traveler.' (Talk or Trade)");
-      setDialogueState({ stage: "intro", resolved: false });
-      setActionMode("dialogue");
     }
   }, [dungeon, actionMode, gameOver]);
 
@@ -222,10 +309,10 @@ export default function GameLayout() {
         <EventLog messages={messages} />
       </div>
       <div className="relative min-h-0 min-w-0 overflow-hidden">
-        <DungeonMap grid={getVisibleMap(dungeon)} />
+        <DungeonMap grid={mapGrid} />
       </div>
       <div className="relative min-h-0 min-w-0 overflow-hidden">
-        <ActionMenu mode={actionMode} onAction={handleAction} />
+        <ActionMenu mode={actionMode} onAction={handleAction} canInteract={canInteract} />
       </div>
       <div className="relative min-h-0 min-w-0 overflow-hidden">
         <FuturePanel
@@ -233,6 +320,7 @@ export default function GameLayout() {
           showInventory={showInventory}
           selectedInventoryId={selectedInventoryId}
           onSelectItem={setSelectedInventoryId}
+          onUseItem={handleInventoryUse}
         />
       </div>
     </div>

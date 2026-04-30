@@ -40,7 +40,7 @@ export const equipmentSlots: EquipmentSlot[] = [
 export type ActionMode = "default" | "combat" | "loot" | "dialogue";
 
 export const actionButtons: Record<ActionMode, string[]> = {
-  default: ["Explore", "Inventory", "Character", "Rest", "Interact"],
+  default: ["Explore", "Inventory", "Rest", "Interact"],
   combat: ["Attack", "Defend", "Skill", "Item", "Run"],
   loot: ["Pick Up", "Leave"],
   dialogue: ["Talk", "Trade", "Leave"],
