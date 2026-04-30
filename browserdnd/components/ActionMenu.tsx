@@ -5,9 +5,10 @@ import { actionButtons, ActionMode } from "./data/mockData";
 interface ActionMenuProps {
   mode: ActionMode;
   onAction: (action: string) => void;
+  canInteract?: boolean;
 }
 
-export default function ActionMenu({ mode, onAction }: ActionMenuProps) {
+export default function ActionMenu({ mode, onAction, canInteract = false }: ActionMenuProps) {
   const modeLabels: Record<ActionMode, string> = {
     default: "Council Commands",
     dialogue: "Court Audience",
@@ -22,6 +23,8 @@ export default function ActionMenu({ mode, onAction }: ActionMenuProps) {
     loot: "A relic lies before you.",
   };
 
+  const actions = mode === "default" ? actionButtons.default.filter((action) => canInteract || action !== "Interact") : actionButtons[mode];
+
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-[#3d2f23] bg-[linear-gradient(165deg,#17120f,#120e0c)] shadow-[0_0_20px_rgba(0,0,0,0.45)]">
       <div className="border-b border-[#3d2f23] px-4 py-2">
@@ -32,7 +35,7 @@ export default function ActionMenu({ mode, onAction }: ActionMenuProps) {
       </div>
 
       <div className="flex flex-1 flex-wrap items-center justify-center gap-3 p-4">
-        {actionButtons[mode].map((action) => (
+        {actions.map((action) => (
           <button
             key={action}
             onClick={() => onAction(action)}
