@@ -80,7 +80,6 @@ export default function GameLayout() {
     };
   };
 
-
   const handleAction = useCallback((action: string) => {
     switch (action) {
       case "Inventory":
@@ -243,13 +242,11 @@ export default function GameLayout() {
     setPlayer((prev) => {
       const selected = prev.inventory.find((item) => item.id === itemId);
       if (!selected) return prev;
-
       if (selected.type === "consumable") {
         const used = consumeConsumable(prev, selected);
         addMessage(used.message);
         return used.player;
       }
-
       if (selected.type === "weapon" || selected.type === "armor") {
         const slotKey: keyof Equipment = selected.type === "weapon" ? "mainWeapon" : "chest";
         const outgoing = prev.equipment[slotKey];
@@ -259,7 +256,6 @@ export default function GameLayout() {
         addMessage(`Equipped ${selected.name}.`);
         return recalcCombatStats({ ...prev, equipment, inventory });
       }
-
       addMessage(`${selected.name} cannot be used right now.`);
       return prev;
     });
@@ -299,22 +295,73 @@ export default function GameLayout() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleKey]);
 
+  const motePositions = [
+    { left: "8%",  top: "22%", duration: "14s", delay: "0s"   },
+    { left: "19%", top: "55%", duration: "18s", delay: "2.1s" },
+    { left: "33%", top: "35%", duration: "12s", delay: "4.4s" },
+    { left: "48%", top: "18%", duration: "20s", delay: "1.2s" },
+    { left: "62%", top: "60%", duration: "16s", delay: "3.7s" },
+    { left: "75%", top: "42%", duration: "22s", delay: "0.8s" },
+    { left: "87%", top: "28%", duration: "13s", delay: "5.5s" },
+    { left: "93%", top: "70%", duration: "17s", delay: "2.9s" },
+  ];
+
   return (
-    <div className="grid h-screen w-screen grid-cols-[300px_1fr_350px] grid-rows-[2fr_1fr] gap-2 overflow-hidden bg-[#090909] p-2 text-[#e8d9b5]">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(127,29,29,0.2),transparent_35%),radial-gradient(circle_at_90%_5%,rgba(146,120,62,0.12),transparent_30%)]" />
-      <div className="relative row-span-2 min-h-0 overflow-hidden">
+    <div
+      className="grid h-screen w-screen grid-cols-[300px_1fr_350px] grid-rows-[2fr_1fr] gap-2 overflow-hidden p-2 text-foreground"
+      style={{ background: "radial-gradient(ellipse at 50% 0%, #1a1208 0%, #0b0a08 55%)" }}
+    >
+      {/* Stone keep atmosphere */}
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+        <svg className="absolute inset-0 w-full h-full opacity-[0.022]">
+          <filter id="stone-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#stone-grain)" />
+        </svg>
+        <div
+          className="torch-glow absolute"
+          style={{
+            top: "-10%", left: "-5%",
+            width: "340px", height: "340px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(210,100,18,0.28) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          className="torch-glow absolute"
+          style={{
+            top: "-10%", right: "-5%",
+            width: "300px", height: "300px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(180,120,28,0.22) 0%, transparent 70%)",
+            animationDelay: "3.6s",
+          }}
+        />
+        {motePositions.map((m, i) => (
+          <div
+            key={i}
+            className="dust-mote"
+            style={{ left: m.left, top: m.top, animationDuration: m.duration, animationDelay: m.delay }}
+          />
+        ))}
+      </div>
+
+      {/* Panels — grid structure locked */}
+      <div className="relative row-span-2 min-h-0 overflow-hidden z-10">
         <CharacterPanel player={player} onEquipmentSlotClick={handleEquipmentSlotClick} />
       </div>
-      <div className="relative min-h-0 min-w-0 overflow-hidden">
+      <div className="relative min-h-0 min-w-0 overflow-hidden z-10">
         <EventLog messages={messages} />
       </div>
-      <div className="relative min-h-0 min-w-0 overflow-hidden">
+      <div className="relative min-h-0 min-w-0 overflow-hidden z-10">
         <DungeonMap grid={mapGrid} />
       </div>
-      <div className="relative min-h-0 min-w-0 overflow-hidden">
+      <div className="relative min-h-0 min-w-0 overflow-hidden z-10">
         <ActionMenu mode={actionMode} onAction={handleAction} canInteract={canInteract} />
       </div>
-      <div className="relative min-h-0 min-w-0 overflow-hidden">
+      <div className="relative min-h-0 min-w-0 overflow-hidden z-10">
         <FuturePanel
           inventory={player.inventory}
           showInventory={showInventory}
