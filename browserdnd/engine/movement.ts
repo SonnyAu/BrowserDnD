@@ -34,31 +34,46 @@ export function movePlayer(dungeon: Dungeon, direction: Direction): MoveResult {
       entityTile: "P",
       itemTile: dungeon.items[playerIndex],
       event: "none",
+      targetIndex: playerIndex,
     };
   }
 
   const newIndex = coordsToIndex(newX, newY, dungeon.width);
   const terrainTile = dungeon.terrain[newIndex];
+  const entityTile = dungeon.entities[newIndex];
+  const itemTile = dungeon.items[newIndex];
+
+  // NPCs block movement but trigger an interaction on bump. Mark the NPC's
+  // tile as visited so it becomes visible to the player even if they never
+  // step on it.
+  if (entityTile === "N") {
+    const newVisited = new Set(dungeon.visited);
+    newVisited.add(newIndex);
+    return {
+      dungeon: { ...dungeon, visited: newVisited },
+      terrainTile,
+      entityTile,
+      itemTile,
+      event: "npcInteract",
+      targetIndex: newIndex,
+    };
+  }
 
   if (terrainTile === "#") {
     return {
       dungeon,
       terrainTile,
-      entityTile: dungeon.entities[newIndex],
-      itemTile: dungeon.items[newIndex],
+      entityTile,
+      itemTile,
       event: "none",
+      targetIndex: newIndex,
     };
   }
-
-  const entityTile = dungeon.entities[newIndex];
-  const itemTile = dungeon.items[newIndex];
 
   let event: EventType = "none";
 
   if (entityTile === "E") {
     event = "enemyEncounter";
-  } else if (entityTile === "N") {
-    event = "npcInteract";
   } else if (itemTile !== " ") {
     event = "itemPickup";
   }
@@ -87,5 +102,6 @@ export function movePlayer(dungeon: Dungeon, direction: Direction): MoveResult {
     entityTile,
     itemTile,
     event,
+    targetIndex: newIndex,
   };
 }

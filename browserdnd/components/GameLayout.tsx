@@ -52,7 +52,12 @@ export default function GameLayout() {
 
   const markNpcAsFound = useCallback(() => {
     if (activeNpcTile === null) return;
-    setFoundNpcTiles((prev) => new Set(prev).add(activeNpcTile));
+    const npcIndex = activeNpcTile;
+    setFoundNpcTiles((prev) => new Set(prev).add(npcIndex));
+    setDungeon((prev) => ({
+      ...prev,
+      entities: prev.entities.substring(0, npcIndex) + " " + prev.entities.substring(npcIndex + 1),
+    }));
     setActiveNpcTile(null);
     setCanInteract(false);
   }, [activeNpcTile]);
@@ -268,8 +273,7 @@ export default function GameLayout() {
     setDungeon(result.dungeon);
     setCanInteract(result.entityTile === "N");
     if (result.event === "npcInteract") {
-      const playerIndex = result.dungeon.entities.indexOf("P");
-      setActiveNpcTile(playerIndex);
+      setActiveNpcTile(result.targetIndex);
       addMessage("You encounter a Council Envoy.");
       addMessage("Council Envoy: 'One answer decides your fate. Loyalty or greed?' (Talk=Loyalty, Trade=Greed)");
       setDialogueState({ stage: "intro", npcName: "Council Envoy" });

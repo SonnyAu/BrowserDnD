@@ -20,7 +20,7 @@ const sampleTerrain =
 const sampleEntities =
   "          " +
   " E  E     " +
-  "   N   E  " +
+  "     N E  " +
   "      E   " +
   "    P     " +
   "  E       ";

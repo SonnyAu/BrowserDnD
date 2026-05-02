@@ -21,6 +21,10 @@ export interface MoveResult {
   entityTile: string;
   itemTile: string;
   event: EventType;
+  // Index of the tile the player attempted to move into (their destination
+  // square), even if the move was blocked. Useful for tracking interaction
+  // targets such as NPCs that block movement.
+  targetIndex: number;
 }
 
 export interface ItemData {
